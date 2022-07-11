@@ -4,7 +4,7 @@ LINUX_BINARY := dist/log-aggregator-$(GIT_HASH).linux
 DARWIN_BINARY := dist/log-aggregator-$(GIT_HASH).darwin
 YOLO_BINARY := dist/log-aggregator-$(GIT_HASH).yolo
 
-GO_VERSION := 1.10.3
+GO_VERSION := 1.17
 
 default: help
 
@@ -22,9 +22,9 @@ help:
 .PHONY: build
 build: $(LINUX_BINARY) $(DARWIN_BINARY) $(YOLO_BINARY)
 
-$(LINUX_BINARY): dep dist
-	docker run --rm -v $$(pwd):/usr/src/github.com/wearefair/log-aggregator \
-	  -w /usr/src/github.com/wearefair/log-aggregator \
+$(LINUX_BINARY):
+	docker run --rm -v $$(pwd):/usr/src/log-aggregator \
+	  -w /usr/src/log-aggregator \
 		-e GOOS=linux \
 		-e GOARCH=amd64 \
 		-e GOPATH=/usr \
@@ -34,8 +34,8 @@ $(LINUX_BINARY): dep dist
 			go build -ldflags \"-w -s\" -v -o $(LINUX_BINARY)"
 
 $(DARWIN_BINARY): dep dist
-	docker run --rm -v $$(pwd):/usr/src/github.com/wearefair/log-aggregator \
-	  -w /usr/src/github.com/wearefair/log-aggregator \
+	docker run --rm -v $$(pwd):/usr/src/log-aggregator \
+	  -w /usr/src/log-aggregator \
 		-e GOOS=darwin \
 		-e GOARCH=amd64 \
 		-e GOPATH=/usr \

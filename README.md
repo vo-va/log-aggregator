@@ -1,4 +1,4 @@
-# Log Aggregator (naming is hard) [![GoDoc](https://godoc.org/github.com/wearefair/log-aggregator?status.svg)](https://godoc.org/github.com/wearefair/log-aggregator/pkg) [![CircleCI](https://circleci.com/gh/wearefair/log-aggregator.svg?style=svg)](https://circleci.com/gh/wearefair/log-aggregator) [![Go Report Card](https://goreportcard.com/badge/wearefair/log-aggregator)](https://goreportcard.com/report/wearefair/log-aggregator)
+# Log Aggregator (naming is hard) [![GoDoc](https://godoc.org/log-aggregator?status.svg)](https://godoc.org/log-aggregator) [![CircleCI](https://circleci.com/gh/wearefair/log-aggregator.svg?style=svg)](https://circleci.com/gh/wearefair/log-aggregator) [![Go Report Card](https://goreportcard.com/badge/wearefair/log-aggregator)](https://goreportcard.com/report/wearefair/log-aggregator)
 
 
 Reads logs from Journald, annotates/transforms, and forwards to AWS Kinesis Firehose.
@@ -85,12 +85,12 @@ Due to some legacy reasons, instead of reading the instance info from the metada
 The log-aggregator can be used as a package (to construct your own pipelines), or as a binary if your use-case fits ours.
 
 ### As a Package
-The main unit of abstraction is a [Pipeline](https://godoc.org/github.com/wearefair/log-aggregator/pkg/pipeline#Pipeline), which is configured with the following components:
+The main unit of abstraction is a [Pipeline](https://godoc.org/log-aggregator/pipeline#Pipeline), which is configured with the following components:
 
-- [Source](https://godoc.org/github.com/wearefair/log-aggregator/pkg/sources#Source): produces log records
-- [Destination](https://godoc.org/github.com/wearefair/log-aggregator/pkg/destinations#Destination): saves log records, and reports progress
-- [Cursor](https://godoc.org/github.com/wearefair/log-aggregator/pkg/cursor#DB): provides a starting point for the `Source`, and persists the `Destination` progress so that processing can be resumed on restarts from a last-known checkpoint
-- [Transformers](https://godoc.org/github.com/wearefair/log-aggregator/pkg/transform#Transformer): transform log records prior to sending to the destination.
+- [Source](https://godoc.org/log-aggregator/sources#Source): produces log records
+- [Destination](https://godoc.org/log-aggregator/destinations#Destination): saves log records, and reports progress
+- [Cursor](https://godoc.org/log-aggregator/cursor#DB): provides a starting point for the `Source`, and persists the `Destination` progress so that processing can be resumed on restarts from a last-known checkpoint
+- [Transformers](https://godoc.org/log-aggregator/transform#Transformer): transform log records prior to sending to the destination.
 
 
 Here is a simple pipeline that uses a mock source and destination, and applies the JSON transformer.
@@ -101,12 +101,12 @@ package main
 import (
 	"time"
 
-	"github.com/wearefair/log-aggregator/pkg/cursor"
-	"github.com/wearefair/log-aggregator/pkg/destinations/stdout"
-	"github.com/wearefair/log-aggregator/pkg/pipeline"
-	"github.com/wearefair/log-aggregator/pkg/sources/mock"
-	"github.com/wearefair/log-aggregator/pkg/transform"
-	"github.com/wearefair/log-aggregator/pkg/transform/json"
+	"log-aggregator/cursor"
+	"log-aggregator/destinations/stdout"
+	"log-aggregator/pipeline"
+	"log-aggregator/sources/mock"
+	"log-aggregator/transform"
+	"log-aggregator/transform/json"
 )
 
 func main() {
