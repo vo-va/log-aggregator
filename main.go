@@ -18,8 +18,8 @@ import (
 	"log-aggregator/transform/aws"
 	"log-aggregator/transform/journal"
 	"log-aggregator/transform/json"
+	"log-aggregator/transform/eleven"
 	"log-aggregator/transform/k8"
-	"log-aggregator/transform/kibana"
 )
 
 const (
@@ -80,8 +80,8 @@ func main() {
 	transformers = []transform.Transformer{
 		journal.Transform,
 		json.Transform,
-		kibana.Transform,
 		aws.New(),
+		eleven.New(),
 	}
 
 	if configPath := os.Getenv(EnvK8ConfigPath); configPath != "" {

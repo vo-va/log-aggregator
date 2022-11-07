@@ -26,6 +26,7 @@ func New() transform.Transformer {
 
 	return func(rec *types.Record) (*types.Record, error) {
 		rec.Fields["aws"] = meta
+		rec.Fields["instance"] = meta.InstanceId
 		return rec, nil
 	}
 }
