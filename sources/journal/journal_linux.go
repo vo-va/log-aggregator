@@ -3,6 +3,8 @@
 package journal
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"log-aggregator/logging"
@@ -44,6 +46,8 @@ type Client struct {
 	out      chan<- *types.Record
 	journal  *sdjournal.Journal
 }
+
+var SYSTEMD_UNITS_IGNORE = os.Getenv("SYSTEMD_UNITS_IGNORE")
 
 func New(conf ClientConfig) (client *Client, err error) {
 	var journal *sdjournal.Journal
@@ -105,8 +109,26 @@ func (c *Client) read() {
 			panic(err)
 		}
 
-		c.out <- entryToRecord((*JournalEntry)(entry))
+		if !c.ignoreSystemUnits(entry) {
+			c.out <- entryToRecord((*JournalEntry)(entry))
+		}
 	}
+}
+
+func (c *Client) ignoreSystemUnits(entry *sdjournal.JournalEntry) bool {
+	services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
+
+	for k, v := range entry.Fields {
+		if k == "UNIT" || k == "_SYSTEMD_UNIT" {
+			for _, s := range services {
+				if s+".service" == v {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 func (c *Client) readEntry() (entry *sdjournal.JournalEntry, err error) {

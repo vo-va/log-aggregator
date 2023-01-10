@@ -176,6 +176,7 @@ There are no cli-flags, all configuration is done via environment variables.
 ##### ELEVEN Environment Variables
 - **ELEVEN_PRODUCT**: Adds the product type logger is installed in.
 - **ELEVEN_COMPONENT**: Adds the component type logger is installed in.
+- **SYSTEMD_UNITS_IGNORE**: Excludes certain systemd units from showing up in logs. E.g `SYSTEMD_UNITS_IGNORE=redis,postgresql`
 
 ## Building/Developing
 
