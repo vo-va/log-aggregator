@@ -75,7 +75,7 @@ func New(conf ClientConfig) (client *Client, err error) {
 	sysUnits := map[string]int{}
 	services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
 	for _, v := range services {
-		sysUnits[v+".service"] = 1
+		sysUnits[v] = 1
 	}
 
 	return &Client{
