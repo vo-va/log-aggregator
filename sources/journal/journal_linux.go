@@ -44,6 +44,7 @@ type Client struct {
 	shutdown bool
 	out      chan<- *types.Record
 	journal  *sdjournal.Journal
+	sysUnits map[string]int
 }
 
 var SYSTEMD_UNITS_IGNORE = os.Getenv("SYSTEMD_UNITS_IGNORE")
@@ -70,8 +71,16 @@ func New(conf ClientConfig) (client *Client, err error) {
 			return nil, errors.Wrap(err, "Error advancing to next entry after seeking to cursor")
 		}
 	}
+
+	sysUnits := map[string]int{}
+	services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
+	for _, v := range services {
+		sysUnits[v+".service"] = 1
+	}
+
 	return &Client{
-		journal: journal,
+		journal:  journal,
+		sysUnits: sysUnits,
 	}, nil
 }
 
@@ -115,15 +124,19 @@ func (c *Client) read() {
 }
 
 func (c *Client) ignoreSystemUnits(entry *sdjournal.JournalEntry) bool {
-	services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
+	unit, ok := entry.Fields["UNIT"]
+	if ok {
+		_, ok := c.sysUnits[unit]
+		if ok {
+			return true
+		}
+	}
 
-	for k, v := range entry.Fields {
-		if k == "UNIT" || k == "_SYSTEMD_UNIT" {
-			for _, s := range services {
-				if s+".service" == v {
-					return true
-				}
-			}
+	sysUnit, ok := entry.Fields["_SYSTEMD_UNIT"]
+	if ok {
+		_, ok := c.sysUnits[sysUnit]
+		if ok {
+			return true
 		}
 	}
 
