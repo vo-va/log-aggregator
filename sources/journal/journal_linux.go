@@ -132,7 +132,7 @@ func (c *Client) ignoreSystemUnits(entry *sdjournal.JournalEntry) bool {
 		}
 	}
 
-	sysUnit, ok := entry.Fields["_SYSTEMD_UNIT"]
+	sysUnit, ok := entry.Fields["SYSLOG_IDENTIFIER"]
 	if ok {
 		_, ok := c.sysUnits[sysUnit]
 		if ok {
