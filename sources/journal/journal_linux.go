@@ -3,6 +3,8 @@
 package journal
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"log-aggregator/logging"
@@ -42,7 +44,10 @@ type Client struct {
 	shutdown bool
 	out      chan<- *types.Record
 	journal  *sdjournal.Journal
+	sysUnits map[string]int
 }
+
+var SYSTEMD_UNITS_IGNORE = os.Getenv("SYSTEMD_UNITS_IGNORE")
 
 func New(conf ClientConfig) (client *Client, err error) {
 	var journal *sdjournal.Journal
@@ -66,8 +71,16 @@ func New(conf ClientConfig) (client *Client, err error) {
 			return nil, errors.Wrap(err, "Error advancing to next entry after seeking to cursor")
 		}
 	}
+
+	sysUnits := map[string]int{}
+	services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
+	for _, v := range services {
+		sysUnits[v] = 1
+	}
+
 	return &Client{
-		journal: journal,
+		journal:  journal,
+		sysUnits: sysUnits,
 	}, nil
 }
 
@@ -104,8 +117,30 @@ func (c *Client) read() {
 			panic(err)
 		}
 
-		c.out <- entryToRecord((*JournalEntry)(entry))
+		if !c.ignoreSystemUnits(entry) {
+			c.out <- entryToRecord((*JournalEntry)(entry))
+		}
 	}
+}
+
+func (c *Client) ignoreSystemUnits(entry *sdjournal.JournalEntry) bool {
+	unit, ok := entry.Fields["UNIT"]
+	if ok {
+		_, ok := c.sysUnits[unit]
+		if ok {
+			return true
+		}
+	}
+
+	sysUnit, ok := entry.Fields["SYSLOG_IDENTIFIER"]
+	if ok {
+		_, ok := c.sysUnits[sysUnit]
+		if ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *Client) readEntry() (entry *sdjournal.JournalEntry, err error) {
