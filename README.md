@@ -1,4 +1,4 @@
-# Log Aggregator (naming is hard) [![GoDoc](https://godoc.org/github.com/wearefair/log-aggregator?status.svg)](https://godoc.org/github.com/wearefair/log-aggregator/pkg) [![CircleCI](https://circleci.com/gh/wearefair/log-aggregator.svg?style=svg)](https://circleci.com/gh/wearefair/log-aggregator) [![Go Report Card](https://goreportcard.com/badge/wearefair/log-aggregator)](https://goreportcard.com/report/wearefair/log-aggregator)
+# Log Aggregator (naming is hard) [![GoDoc](https://godoc.org/log-aggregator?status.svg)](https://godoc.org/log-aggregator) [![CircleCI](https://circleci.com/gh/wearefair/log-aggregator.svg?style=svg)](https://circleci.com/gh/wearefair/log-aggregator) [![Go Report Card](https://goreportcard.com/badge/wearefair/log-aggregator)](https://goreportcard.com/report/wearefair/log-aggregator)
 
 
 Reads logs from Journald, annotates/transforms, and forwards to AWS Kinesis Firehose.
@@ -66,6 +66,9 @@ There are a few environmental factors that drove us to this solution:
   - K8s: Add Pod metadata if the log comes from a Kubernetes Pod
   - Kibana: insert `@timestamp` field in the format Kibana expects
   - JSON: attempt to parse the log line as JSON, and if successful set the `ts` field as the log entry time
+  - Eleven: Insert `when` field in format that sumologic expects
+	Also adds `product` and `component` field which refers to Eleven product/component types.
+	E.g product === "ERAD Jenkins", component === "Jenkins Server"
 
 ### Kubernetes Support
 
@@ -85,12 +88,12 @@ Due to some legacy reasons, instead of reading the instance info from the metada
 The log-aggregator can be used as a package (to construct your own pipelines), or as a binary if your use-case fits ours.
 
 ### As a Package
-The main unit of abstraction is a [Pipeline](https://godoc.org/github.com/wearefair/log-aggregator/pkg/pipeline#Pipeline), which is configured with the following components:
+The main unit of abstraction is a [Pipeline](https://godoc.org/log-aggregator/pipeline#Pipeline), which is configured with the following components:
 
-- [Source](https://godoc.org/github.com/wearefair/log-aggregator/pkg/sources#Source): produces log records
-- [Destination](https://godoc.org/github.com/wearefair/log-aggregator/pkg/destinations#Destination): saves log records, and reports progress
-- [Cursor](https://godoc.org/github.com/wearefair/log-aggregator/pkg/cursor#DB): provides a starting point for the `Source`, and persists the `Destination` progress so that processing can be resumed on restarts from a last-known checkpoint
-- [Transformers](https://godoc.org/github.com/wearefair/log-aggregator/pkg/transform#Transformer): transform log records prior to sending to the destination.
+- [Source](https://godoc.org/log-aggregator/sources#Source): produces log records
+- [Destination](https://godoc.org/log-aggregator/destinations#Destination): saves log records, and reports progress
+- [Cursor](https://godoc.org/log-aggregator/cursor#DB): provides a starting point for the `Source`, and persists the `Destination` progress so that processing can be resumed on restarts from a last-known checkpoint
+- [Transformers](https://godoc.org/log-aggregator/transform#Transformer): transform log records prior to sending to the destination.
 
 
 Here is a simple pipeline that uses a mock source and destination, and applies the JSON transformer.
@@ -101,12 +104,12 @@ package main
 import (
 	"time"
 
-	"github.com/wearefair/log-aggregator/pkg/cursor"
-	"github.com/wearefair/log-aggregator/pkg/destinations/stdout"
-	"github.com/wearefair/log-aggregator/pkg/pipeline"
-	"github.com/wearefair/log-aggregator/pkg/sources/mock"
-	"github.com/wearefair/log-aggregator/pkg/transform"
-	"github.com/wearefair/log-aggregator/pkg/transform/json"
+	"log-aggregator/cursor"
+	"log-aggregator/destinations/stdout"
+	"log-aggregator/pipeline"
+	"log-aggregator/sources/mock"
+	"log-aggregator/transform"
+	"log-aggregator/transform/json"
 )
 
 func main() {
@@ -169,6 +172,11 @@ There are no cli-flags, all configuration is done via environment variables.
 - **EC2_METADATA_LOCAL_IPV4**: For the AWS transformer
 - **EC2_METADATA_LOCAL_HOSTNAME**: Used by the AWS and the K8s transformer (for the Node name)
 - **ENV=production**: Turns on JSON logging for the aggregator's own logs
+
+##### ELEVEN Environment Variables
+- **ELEVEN_PRODUCT**: Adds the product type logger is installed in.
+- **ELEVEN_COMPONENT**: Adds the component type logger is installed in.
+- **SYSTEMD_UNITS_IGNORE**: Excludes certain systemd units from showing up in logs. E.g `SYSTEMD_UNITS_IGNORE=redis,postgresql`
 
 ## Building/Developing
 
