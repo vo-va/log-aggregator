@@ -1,14 +1,22 @@
 #!/bin/bash
 
-if [[ -z $FAIR_LOG_FIREHOSE_STREAM || -z $ELEVEN_PRODUCT || -z $ELEVEN_COMPONENT ]]; then
-	echo "Usage: FAIR_LOG_FIREHOSE_STREAM, ELEVEN_PRODUCT and ELEVEN_COMPONENT env variables need to be set "
+#!/bin/bash
+
+if [ $# -lt 3 ]; then
+	echo "Usage: $ <firehose_stream> <product> <component> <units/service to ignore>"
+	echo "example: $0 log-stream "product a" "component b" "redis.service,postgresql"
 	echo "WARNING logger will not be installed, safely exiting with 0 to not abort deployment"
+
 	exit 0
 fi
 
-# Install logger to /usr/bin
-curl -SL https://github.com/eleven-software/log-aggregator/releases/download/1.2/log-aggregator_1.2 -o /usr/local/bin/log-aggregator
+eleven_product="$2"
+eleven_component="$3"
 
+ignore_systemd_units="$4"
+
+# Install logger to /usr/bin
+cp ./log-aggregator -o /usr/local/bin/log-aggregator
 chmod +x /usr/local/bin/log-aggregator
 
 endpoint="169.254.169.254"
@@ -32,11 +40,12 @@ After=network-online.target
 Requires=network-online.target
 [Service]
 Environment="FAIR_LOG_CURSOR_PATH=/var/log/log-aggregator.cursor"
-Environment="FAIR_LOG_FIREHOSE_STREAM=$FAIR_LOG_FIREHOSE_STREAM"
+Environment="FAIR_LOG_FIREHOSE_STREAM=$1"
 Environment="FAIR_LOG_FIREHOSE_CREDENTIALS_ENDPOINT=$endpoint"
-Environment="ELEVEN_PRODUCT=$ELEVEN_PRODUCT"
-Environment="ELEVEN_COMPONENT=$ELEVEN_COMPONENT"
+Environment="ELEVEN_PRODUCT=$eleven_product"
+Environment="ELEVEN_COMPONENT=$eleven_component"
 Environment="ENV=production"
+Environment="SYSTEMD_UNITS_IGNORE=$ignore_systemd_units"
 ExecStart=/usr/local/bin/start-logger
 Restart=always
 RestartSec=5

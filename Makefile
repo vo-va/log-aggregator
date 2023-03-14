@@ -3,6 +3,7 @@ GIT_HASH := $(shell git rev-parse HEAD)
 LINUX_BINARY := dist/log-aggregator-$(GIT_HASH).linux
 DARWIN_BINARY := dist/log-aggregator-$(GIT_HASH).darwin
 YOLO_BINARY := dist/log-aggregator-$(GIT_HASH).yolo
+SETUP_SCRIPT := setup-logger.sh
 
 GO_VERSION := 1.17
 
@@ -64,6 +65,14 @@ build-yolo: $(YOLO_BINARY)
 .PHONY: release
 release: $(LINUX_BINARY)
 	aws s3 cp $(LINUX_BINARY) s3://$(RELEASE_BUCKET)/$(PACKAGE)/$(PACKAGE)-$(GIT_HASH)
+
+.PHONY: github_release
+github_release: $(LINUX_BINARY)
+	BUILD_ID=$(git describe --exact-match --tags $(git log -n1 --pretty='%H') || git rev-parse HEAD)
+
+	tar -czf dist/log_aggergator_BUILD_ID.tar.gz \
+		$(LINUX_BINARY) \
+		$(SETUP_SCRIPT)
 
 dist:
 	mkdir dist
