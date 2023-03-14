@@ -5,6 +5,8 @@ DARWIN_BINARY := dist/log-aggregator-$(GIT_HASH).darwin
 YOLO_BINARY := dist/log-aggregator-$(GIT_HASH).yolo
 SETUP_SCRIPT := setup-logger.sh
 
+BUILD_ID := $(shell git describe --exact-match --tags $$(git log -n1 --pretty='%H') || git rev-parse HEAD)
+
 GO_VERSION := 1.17
 
 default: help
@@ -32,7 +34,7 @@ $(LINUX_BINARY):
 		golang:$(GO_VERSION) \
 	  bash -c "apt-get update && apt-get install libsystemd-dev --assume-yes && \
 			echo 'Running linux go build...' && \
-			go build -ldflags \"-w -s\" -v -o $(LINUX_BINARY)"
+			go build -mod vendor -ldflags \"-w -s\" -v -o $(LINUX_BINARY)"
 
 $(DARWIN_BINARY): dep dist
 	docker run --rm -v $$(pwd):/usr/src/log-aggregator \
@@ -43,7 +45,7 @@ $(DARWIN_BINARY): dep dist
 		golang:$(GO_VERSION) \
 	  bash -c "apt-get update && apt-get install libsystemd-dev --assume-yes && \
 			echo 'Running darwin go build...' && \
-			go build -ldflags \"-w -s\" -v -o $(DARWIN_BINARY)"
+			go build -mod vendor -ldflags \"-w -s\" -v -o $(DARWIN_BINARY)"
 
 
 $(YOLO_BINARY): dep dist
@@ -68,9 +70,9 @@ release: $(LINUX_BINARY)
 
 .PHONY: github_release
 github_release: $(LINUX_BINARY)
-	BUILD_ID=$(git describe --exact-match --tags $(git log -n1 --pretty='%H') || git rev-parse HEAD)
-
-	tar -czf dist/log_aggergator_BUILD_ID.tar.gz \
+	tar \
+		--transform "s|$(LINUX_BINARY)|log-aggregator|" \
+		-czf "dist/log_aggergator_$(BUILD_ID).tar.gz" \
 		$(LINUX_BINARY) \
 		$(SETUP_SCRIPT)
 

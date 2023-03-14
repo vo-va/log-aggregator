@@ -1,10 +1,10 @@
 #!/bin/bash
+set -e
 
-#!/bin/bash
 
 if [ $# -lt 3 ]; then
 	echo "Usage: $ <firehose_stream> <product> <component> <units/service to ignore>"
-	echo "example: $0 log-stream "product a" "component b" "redis.service,postgresql"
+	echo "example: $0 log-stream \"product a\" \"component b\" \"redis.service,postgresql\""
 	echo "WARNING logger will not be installed, safely exiting with 0 to not abort deployment"
 
 	exit 0
@@ -13,10 +13,10 @@ fi
 eleven_product="$2"
 eleven_component="$3"
 
-ignore_systemd_units="$4"
+ignore_systemd_units="${4:-}"
 
 # Install logger to /usr/bin
-cp ./log-aggregator -o /usr/local/bin/log-aggregator
+cp ./log-aggregator /usr/local/bin/log-aggregator
 chmod +x /usr/local/bin/log-aggregator
 
 endpoint="169.254.169.254"
