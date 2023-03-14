@@ -66,6 +66,9 @@ There are a few environmental factors that drove us to this solution:
   - K8s: Add Pod metadata if the log comes from a Kubernetes Pod
   - Kibana: insert `@timestamp` field in the format Kibana expects
   - JSON: attempt to parse the log line as JSON, and if successful set the `ts` field as the log entry time
+  - Eleven: Insert `when` field in format that sumologic expects
+	Also adds `product` and `component` field which refers to Eleven product/component types.
+	E.g product === "ERAD Jenkins", component === "Jenkins Server"
 
 ### Kubernetes Support
 
@@ -169,6 +172,11 @@ There are no cli-flags, all configuration is done via environment variables.
 - **EC2_METADATA_LOCAL_IPV4**: For the AWS transformer
 - **EC2_METADATA_LOCAL_HOSTNAME**: Used by the AWS and the K8s transformer (for the Node name)
 - **ENV=production**: Turns on JSON logging for the aggregator's own logs
+
+##### ELEVEN Environment Variables
+- **ELEVEN_PRODUCT**: Adds the product type logger is installed in.
+- **ELEVEN_COMPONENT**: Adds the component type logger is installed in.
+- **SYSTEMD_UNITS_IGNORE**: Excludes certain systemd units from showing up in logs. E.g `SYSTEMD_UNITS_IGNORE=redis,postgresql`
 
 ## Building/Developing
 

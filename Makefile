@@ -3,6 +3,9 @@ GIT_HASH := $(shell git rev-parse HEAD)
 LINUX_BINARY := dist/log-aggregator-$(GIT_HASH).linux
 DARWIN_BINARY := dist/log-aggregator-$(GIT_HASH).darwin
 YOLO_BINARY := dist/log-aggregator-$(GIT_HASH).yolo
+SETUP_SCRIPT := setup-logger.sh
+
+BUILD_ID := $(shell git describe --exact-match --tags $$(git log -n1 --pretty='%H') || git rev-parse HEAD)
 
 GO_VERSION := 1.17
 
@@ -31,7 +34,7 @@ $(LINUX_BINARY):
 		golang:$(GO_VERSION) \
 	  bash -c "apt-get update && apt-get install libsystemd-dev --assume-yes && \
 			echo 'Running linux go build...' && \
-			go build -ldflags \"-w -s\" -v -o $(LINUX_BINARY)"
+			go build -mod vendor -ldflags \"-w -s\" -v -o $(LINUX_BINARY)"
 
 $(DARWIN_BINARY): dep dist
 	docker run --rm -v $$(pwd):/usr/src/log-aggregator \
@@ -42,7 +45,7 @@ $(DARWIN_BINARY): dep dist
 		golang:$(GO_VERSION) \
 	  bash -c "apt-get update && apt-get install libsystemd-dev --assume-yes && \
 			echo 'Running darwin go build...' && \
-			go build -ldflags \"-w -s\" -v -o $(DARWIN_BINARY)"
+			go build -mod vendor -ldflags \"-w -s\" -v -o $(DARWIN_BINARY)"
 
 
 $(YOLO_BINARY): dep dist
@@ -64,6 +67,14 @@ build-yolo: $(YOLO_BINARY)
 .PHONY: release
 release: $(LINUX_BINARY)
 	aws s3 cp $(LINUX_BINARY) s3://$(RELEASE_BUCKET)/$(PACKAGE)/$(PACKAGE)-$(GIT_HASH)
+
+.PHONY: github_release
+github_release: $(LINUX_BINARY)
+	tar \
+		--transform "s|$(LINUX_BINARY)|log-aggregator|" \
+		-czf "dist/log_aggergator_$(BUILD_ID).tar.gz" \
+		$(LINUX_BINARY) \
+		$(SETUP_SCRIPT)
 
 dist:
 	mkdir dist

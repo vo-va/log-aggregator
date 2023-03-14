@@ -6,7 +6,7 @@ import "log-aggregator/types"
 func Transform(rec *types.Record) (*types.Record, error) {
 	// Re-assign MESSAGE field to log
 	if val, ok := rec.Fields["MESSAGE"]; ok {
-		rec.Fields["log"] = val
+		rec.Fields["message"] = val
 		delete(rec.Fields, "MESSAGE")
 	}
 
