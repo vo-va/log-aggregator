@@ -1,6 +1,9 @@
 package journal
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"log-aggregator/types"
@@ -73,4 +76,52 @@ func TestEntryToTime(t *testing.T) {
 		t.Errorf("Expected time to equal 1234.567890000, but got %d.%d",
 			entryTime.Unix(), entryTime.Nanosecond())
 	}
+}
+
+func TestIgnoreSystemUnitConfiguration(t *testing.T) {
+	// create maps of ignored units
+	sysUnits := map[string]int{}
+
+	services := strings.Split("httpd.service,httpd", ",")
+	for _, v := range services {
+		sysUnits[v] = 1
+	}
+
+	if len(sysUnits) != 2 {
+		t.Errorf("Expected 2 units to be ignored, but got %d", len(sysUnits))
+	}
+
+	sysUnits = make(map[string]int)
+	os.Setenv("SYSTEMD_UNITS_IGNORE", "")
+	emptyEnvVar := os.Getenv("SYSTEMD_UNITS_IGNORE")
+
+	services = strings.Split(emptyEnvVar, ",")
+	for _, v := range services {
+		sysUnits[v] = 1
+	}
+
+	if len(sysUnits) != 1 {
+		t.Errorf("Expected 1 units because split of empty string produce the same string %d", len(sysUnits))
+	}
+
+}
+
+func TestIgnoreSystemUnitWork(t *testing.T) {
+	sysUnits := map[string]int{}
+
+	services := strings.Split("httpd.service", ",")
+	for _, v := range services {
+		sysUnits[v] = 1
+	}
+
+	unit := "httpd.service"
+
+	_, ok := sysUnits[unit]
+	if ok {
+		fmt.Printf("Unit %s is ignored\n", unit)
+		return
+	}
+	t.Errorf("Unit %s is not ignored\n", unit)
+	return
+
 }

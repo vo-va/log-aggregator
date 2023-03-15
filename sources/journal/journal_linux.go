@@ -4,15 +4,16 @@ package journal
 
 import (
 	"os"
-	"strings"
 	"time"
 
 	"log-aggregator/logging"
 	"log-aggregator/types"
 
+	"encoding/json"
 	"github.com/cenkalti/backoff"
 	"github.com/coreos/go-systemd/sdjournal"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 type JournalEntry sdjournal.JournalEntry
@@ -73,9 +74,13 @@ func New(conf ClientConfig) (client *Client, err error) {
 	}
 
 	sysUnits := map[string]int{}
-	services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
-	for _, v := range services {
-		sysUnits[v] = 1
+
+	// fill the map only if parameter is not empty
+	if len(SYSTEMD_UNITS_IGNORE) != 0 {
+		services := strings.Split(SYSTEMD_UNITS_IGNORE, ",")
+		for _, v := range services {
+			sysUnits[v] = 1
+		}
 	}
 
 	return &Client{
@@ -118,6 +123,14 @@ func (c *Client) read() {
 		}
 
 		if !c.ignoreSystemUnits(entry) {
+
+			serialized, err := json.Marshal(entry.Fields)
+			if err != nil {
+				logging.Error(errors.Wrap(err, "Failed to marshal record to json"))
+
+			}
+
+			logging.Logger.Debug("entry:" + string(serialized))
 			c.out <- entryToRecord((*JournalEntry)(entry))
 		}
 	}
